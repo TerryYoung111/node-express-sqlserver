@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    hello world!
+    <div id="inputBox">
+        <p>
+            <label>姓名：</label><input type="text" id="name">
+        </p>
+        <p>
+            <label>账号：</label><input type="text" id="account">
+        </p>
+        <p>
+            <label>密码：</label><input type="password" id="password">
+        </p>
+        <p>
+            <label>性别：</label>男<input type="radio" name="gender" value="男" checked>女<input type="radio" name="gender"
+                value="女">
+        </p>
+        <p>
+            <label>电话：</label><input type="text" id="tel">
+        </p>
+        <p>
+            <button onclick="sigin()">注册</button>
+            <button onclick="update()">更新</button>
+        </p>
+    </div>
+    <div>
+        <table border="1" cellpading="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <td>操作</td>
+                    <td>姓名</td>
+                    <td>账号</td>
+                    <td>性别</td>
+                    <td>电话</td>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+
+            </tbody>
+        </table>
+    </div>
+    <script src="./javascripts/jquery.min.js"></script>
+    <script>
+        var tbody = $('#tbody');
+        window.onload = function () {
+            getAllStudent();
+        }
+
+        tbody.on('click', function (event) {
+            var e = event || window.event;
+            var target = e.target || e.srcElement;
+            console.log(e)
+            if (target.nodeName.toLowerCase() == 'a' && target.className.toLowerCase() == 'td_delete') {
+                deleteData(target.id);
+            } else if (target.nodeName.toLowerCase() == 'a' && target.className.toLowerCase() == 'td_update') {
+                queryDataById(target.id);
+            };
+        })
+
+
+        function getAllStudent() {
+            $.ajax({
+                url: '/students/all',
+                type: 'GET',
+                success: function (data) {
+                    if (data.success) {
+                        var tbodyTemp = '';
+                        for (let index = 0, arr = data.datas; index < arr.length; index++) {
+                            tbodyTemp +=
+                                `<tr><td><a href="javascript:;" id="${arr[index]['id']}" class="td_delete">删除</a><a href="javascript:;" id="${arr[index]['id']}" class="td_update">编辑</a></td>`
+                            for (const key in arr[index]) {
+                                if (arr[index].hasOwnProperty(key) && key != 'id') {
+                                    const element = arr[index][key];
+                                    tbodyTemp += `<td>${element}</td>`
+                                }
+                            }
+                            tbodyTemp += `</tr>`;
+                        }
+                        tbody.append(tbodyTemp);
+                    }
+                }
+            })
+        }
+
+        function sigin() {
+            var param = {
+                name: $('#name').val(),
+                account: $('#account').val(),
+                password: $('#password').val(),
+                gender: $("input[name = 'gender']:checked").val(),
+                tel: $('#tel').val()
+            }
+            $.ajax({
+                url: '/students/add',
+                type: 'POST',
+                dataType: 'json',
+                data: param,
+                success: function (res) {
+                    if (res.success) {
+                        alert('注册成功！');
+                        $('#name').val('');
+                        $('#account').val('');
+                        $('#password').val('');
+                        $("input[name = 'gender']:checked").val('男');
+                        $('#tel').val('');
+                        tbody.html('');
+                        getAllStudent();
+                    } else {
+                        alert(res.datas.messages);
+                    }
+                }
+            })
+        }
+
+        function deleteData(id) {
+            $.ajax({
+                url: '/students/delete',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: id
+                },
+                success: function (res) {
+                    if (res.success) {
+                        alert('删除成功！');
+                        tbody.html('');
+                        getAllStudent();
+                    } else {
+                        alert(res.datas.messages);
+                    }
+                }
+            })
+        }
+
+        var hiddenTag;
+
+        function queryDataById(id) {
+            if (hiddenTag) {
+                hiddenTag.remove();
+            }
+            $.ajax({
+                url: '/students/queryById',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id: id
+                },
+                success: function (res) {
+                    if (res.success) {
+                        console.log(res.datas);
+                        $('#name').val(res.datas.name);
+                        $('#account').val(res.datas.account);
+                        $('#password').val(res.datas.password);
+                        $("input[name = 'gender']:checked").val(res.datas.gender);
+                        $('#tel').val(res.datas.tel);
+                        hiddenTag = $("<input type='hidden' id='id_input'>");
+                        hiddenTag.val(res.datas.id);
+                        $("#inputBox").append(hiddenTag);
+                    } else {
+                        alert(res.datas.messages);
+                    }
+                }
+            })
+        }
+
+        function update() {
+            var param = {
+                name: $('#name').val(),
+                account: $('#account').val(),
+                password: $('#password').val(),
+                gender: $("input[name = 'gender']:checked").val(),
+                tel: $('#tel').val(),
+                id: $('#id_input').val()
+            }
+            $.ajax({
+                url: '/students/update',
+                type: 'POST',
+                dataType: 'json',
+                data: param,
+                success: function (res) {
+                    if (res.success) {
+                        alert('更新成功！');
+                        $('#name').val('');
+                        $('#account').val('');
+                        $('#password').val('');
+                        $("input[name = 'gender']:checked").val('男');
+                        $('#tel').val('');
+                        tbody.html('');
+                        getAllStudent();
+                    } else {
+                        alert(res.datas.messages);
+                    }
+                }
+            })
+        }
+
+    </script>
+</body>
+
+</html>
